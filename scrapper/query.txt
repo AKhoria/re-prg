@@ -1,0 +1,179 @@
+query AdvertList($locale: Locale!, $estateType: [EstateType], $offerType: [OfferType], $disposition: [Disposition], $region: ID, $regionOsmIds: [ID], $limit: Int = 15, $offset: Int = 0, $order: ResultOrder = TIMEORDER_DESC, $petFriendly: Boolean, $balconyFrom: Float, $balconyTo: Float, $loggiaFrom: Float, $loggiaTo: Float, $terraceFrom: Float, $terraceTo: Float, $cellarFrom: Float, $cellarTo: Float, $parking: Boolean, $garage: Boolean, $newBuilding: Boolean, $lift: Boolean, $ownership: [Ownership], $construction: [Construction], $equipped: [Equipped], $priceFrom: Int, $priceTo: Int, $surfaceFrom: Int, $surfaceTo: Int, $advertId: [ID], $roommate: Boolean, $includeImports: Boolean, $boundaryPoints: [GPSPointInput], $discountedOnly: Boolean, $polygonBuffer: Int) {
+  listAdverts(
+    offerType: $offerType
+    estateType: $estateType
+    disposition: $disposition
+    limit: $limit
+    regionId: $region
+    regionOsmIds: $regionOsmIds
+    offset: $offset
+    order: $order
+    petFriendly: $petFriendly
+    balconySurfaceFrom: $balconyFrom
+    balconySurfaceTo: $balconyTo
+    loggiaSurfaceFrom: $loggiaFrom
+    loggiaSurfaceTo: $loggiaTo
+    terraceSurfaceFrom: $terraceFrom
+    terraceSurfaceTo: $terraceTo
+    cellarSurfaceFrom: $cellarFrom
+    cellarSurfaceTo: $cellarTo
+    parking: $parking
+    garage: $garage
+    newBuilding: $newBuilding
+    lift: $lift
+    ownership: $ownership
+    construction: $construction
+    equipped: $equipped
+    priceFrom: $priceFrom
+    priceTo: $priceTo
+    surfaceFrom: $surfaceFrom
+    surfaceTo: $surfaceTo
+    ids: $advertId
+    roommate: $roommate
+    includeImports: $includeImports
+    boundaryPoints: $boundaryPoints
+    discountedOnly: $discountedOnly
+    polygonBuffer: $polygonBuffer
+  ) {
+    list {
+      id
+      uri
+      estateType
+      offerType
+      disposition
+      imageAltText(locale: $locale)
+      mainImage {
+        id
+        url(filter: RECORD_THUMB)
+        __typename
+      }
+      address(locale: $locale)
+      surface
+      surfaceLand
+      tags(locale: $locale)
+      price
+      charges
+      currency
+      petFriendly
+      reserved
+      highlighted
+      roommate
+      project {
+        id
+        __typename
+      }
+      gps {
+        lat
+        lng
+        __typename
+      }
+      mortgageData(locale: $locale) {
+        rateLow
+        rateHigh
+        loan
+        years
+        __typename
+      }
+      originalPrice
+      isDiscounted
+      nemoreport {
+        id
+        status
+        timeCreated
+        __typename
+      }
+      isNew
+      __typename
+    }
+    totalCount
+    __typename
+  }
+  actionList: listAdverts(
+    offerType: $offerType
+    estateType: $estateType
+    disposition: $disposition
+    regionId: $region
+    regionOsmIds: $regionOsmIds
+    offset: $offset
+    order: $order
+    petFriendly: $petFriendly
+    balconySurfaceFrom: $balconyFrom
+    balconySurfaceTo: $balconyTo
+    loggiaSurfaceFrom: $loggiaFrom
+    loggiaSurfaceTo: $loggiaTo
+    terraceSurfaceFrom: $terraceFrom
+    terraceSurfaceTo: $terraceTo
+    cellarSurfaceFrom: $cellarFrom
+    cellarSurfaceTo: $cellarTo
+    parking: $parking
+    garage: $garage
+    newBuilding: $newBuilding
+    lift: $lift
+    ownership: $ownership
+    construction: $construction
+    equipped: $equipped
+    priceFrom: $priceFrom
+    priceTo: $priceTo
+    surfaceFrom: $surfaceFrom
+    surfaceTo: $surfaceTo
+    ids: $advertId
+    roommate: $roommate
+    includeImports: $includeImports
+    boundaryPoints: $boundaryPoints
+    discountedOnly: true
+    limit: 3
+  ) {
+    list {
+      id
+      uri
+      estateType
+      offerType
+      disposition
+      imageAltText(locale: $locale)
+      mainImage {
+        id
+        url(filter: RECORD_THUMB)
+        __typename
+      }
+      address(locale: $locale)
+      surface
+      surfaceLand
+      tags(locale: $locale)
+      price
+      charges
+      currency
+      petFriendly
+      reserved
+      highlighted
+      roommate
+      project {
+        id
+        __typename
+      }
+      gps {
+        lat
+        lng
+        __typename
+      }
+      mortgageData(locale: $locale) {
+        rateLow
+        rateHigh
+        loan
+        years
+        __typename
+      }
+      originalPrice
+      isDiscounted
+      nemoreport {
+        id
+        status
+        timeCreated
+        __typename
+      }
+      isNew
+      __typename
+    }
+    totalCount
+    __typename
+  }
+}
