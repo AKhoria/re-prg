@@ -147,7 +147,7 @@ function App() {
 
   function Index() {
     return <Container >
-      <Row>
+      <Row className='mainrow'>
         <Col width={100}>
         <Form.Control 
             type="text"
@@ -167,7 +167,7 @@ function App() {
             </div>
           </Popup></Col>
       </Row>
-      <Row>
+      <Row className='mainrow'>
         <Col>
           <h3>New advs (24h):</h3>
           <MaterialReactTable
@@ -177,7 +177,7 @@ function App() {
           />
         </Col>
       </Row>
-      <Row>
+      <Row className='mainrow'>
         <Col>
           <h3 className='title'>Price changes:</h3>
           <MaterialReactTable
@@ -187,7 +187,7 @@ function App() {
           />
         </Col>
       </Row>
-      <Row>
+      <Row className='mainrow'>
         <Col>
           <h3 className='title'>Average changes price since 2023-02-05 (in progress...)</h3>
           <LineChart
@@ -203,7 +203,7 @@ function App() {
           </LineChart>
         </Col>
       </Row>
-      <Row>
+      <Row className='mainrow'>
         <Col>
           <h3>Price per square meter</h3>
           <LineChart
