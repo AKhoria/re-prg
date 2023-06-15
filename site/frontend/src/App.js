@@ -11,6 +11,8 @@ import { LineChart, Line, CartesianGrid, XAxis, Tooltip } from 'recharts';
 import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
 import {Details} from "./components/Details"
+import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
 
 
 function App() {
@@ -144,16 +146,21 @@ function App() {
 
 
   function Index() {
-    return <Container>
+    return <Container >
       <Row>
-        <Col width={200}>
-          <input
+        <Col width={100}>
+        <Form.Control 
             type="text"
             value={searchInput}
             placeholder='Enter ID'
             onChange={handleChange}
             onKeyUp={handleKeyPress}
+            width={200}
+            size="lg" 
           />
+          </Col>
+          <Col>
+          <Button onClick={()=>setOpenAdv(true)} size="lg">Search</Button>
           <Popup open={openAdv} closeOnDocumentClick onClose={closeModal}>
             <div>
               <Details addId={searchInput}></Details>
@@ -172,7 +179,7 @@ function App() {
       </Row>
       <Row>
         <Col>
-          <h3>Price changes:</h3>
+          <h3 className='title'>Price changes:</h3>
           <MaterialReactTable
             columns={columnsForDiscouts}
             data={changes}
@@ -182,7 +189,7 @@ function App() {
       </Row>
       <Row>
         <Col>
-          <h3>Average changes price since 2023-02-05 (in progress...)</h3>
+          <h3 className='title'>Average changes price since 2023-02-05 (in progress...)</h3>
           <LineChart
             width={1300}
             height={400}

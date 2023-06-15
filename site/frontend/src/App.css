@@ -39,3 +39,12 @@
 .text-left{
   text-align: left;
 }
+
+div.row{
+  padding-top: 10px;
+  padding-bottom: 20px;
+}
+h3.title{
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
