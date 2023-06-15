@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css';
 import Container from 'react-bootstrap/Container';
@@ -10,6 +10,7 @@ import MaterialReactTable from 'material-react-table';
 import { LineChart, Line, CartesianGrid, XAxis, Tooltip } from 'recharts';
 import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
+import {Details} from "./components/Details"
 
 
 function App() {
@@ -36,6 +37,8 @@ function App() {
     setOpenAdv(false)
   }
 
+
+  // Preload
   useEffect(() => {
     axios.get('/api/newAdvs' + (window.location.search ?? "")).then((response) => {
       setAdverbs(response.data)
@@ -50,7 +53,8 @@ function App() {
       setAvg(response.data)
     })
   }, [])
-  const columns1 = useMemo(() => [
+
+  const columnsForNewAdv = [
     {
       accessorKey: 'id',
       header: 'Id'
@@ -73,9 +77,9 @@ function App() {
       accessorKey: 'createdOn',
       header: 'Created On',
     }
-  ]);
+  ];
 
-  const columns2 = useMemo(() => [
+  const columnsForDiscouts = [
     {
       accessorFn: (row) => row,
       id: 'id',
@@ -101,23 +105,28 @@ function App() {
     }, {
       accessorKey: 'first_price',
       header: 'First Price',
+      size: '100'
     }, {
       accessorKey: 'last_price',
       header: 'Last Price',
       field: 'last_price',
+      size: '100'
     },
     {
       accessorKey: 'change',
       header: 'Change',
+      size: '50'
     },
     {
       accessorKey: 'type',
       header: 'Type of analisys',
+      size: '100'
     },
     {
       accessorFn: (row) => row,
       id: "links",
       header: 'Links',
+      size: '100',
       Cell: ({ renderedCellValue }) => {
         let links = renderedCellValue.url.split(",");
         return <div>
@@ -130,48 +139,10 @@ function App() {
     {
       accessorKey: "price_history",
       header: 'History',
-    }]);
+    }];
 
 
-  function Details(props) {
-    const id = props.addId;
-    const [add, setAdd] = useState(null)
-    const [history, setHistory] = useState(null)
-    useEffect(() => {
-      axios.get('/api/adv?id=' + id).then((response) => {
-        if (response.data) {
-          setAdd(response.data)
-          setHistory(response.data.history.split(",").map(pair => {
-            let [date, price] = pair.split(";")
-            return { date, price }
-          }))
-        }
-      })
-    }, [id])
 
-    return add ? <Container className='border text-left'>
-      <Row><Col>{history.length > 1 ?
-        <LineChart data={history} width={600}
-          height={200}>
-          <Line type="monotone" dataKey="price" stroke="#ff7300" yAxisId={0} />
-          <XAxis dataKey="date" />
-          <CartesianGrid stroke="#ccc" />
-          <Tooltip />
-        </LineChart>
-        : null}
-      </Col></Row>
-      <Row className='border'><Col>id</Col><Col>{add.id}</Col></Row>
-      <Row className='border'><Col>text</Col><Col><a href={add.url}>{add.text}</a></Col></Row>
-      <Row className='border'><Col>size</Col><Col>{add.size}</Col></Row>
-      <Row className='border'><Col>locality</Col>{add.locality}<Col></Col></Row>
-      <Row className='border'><Col>disposition</Col><Col>{add.disposition}</Col></Row>
-      <Row className='border'><Col>gpsLat	gpsLon	</Col><Col>{add.gpsLat}-{add.gpsLon}</Col></Row>
-      <Row className='border'><Col>history</Col><Col>{history.map(history =>
-
-        <Row key={history.date}><Col>{history.date}</Col><Col>{history.price}</Col></Row>
-      )}</Col></Row>
-    </Container> : <span>Not found</span>
-  }
   function Index() {
     return <Container>
       <Row>
@@ -193,7 +164,7 @@ function App() {
         <Col>
           <h3>New advs (24h):</h3>
           <MaterialReactTable
-            columns={columns1}
+            columns={columnsForNewAdv}
             data={adverbs}
             renderDetailPanel={({ row }) => <Details addId={row.original.id}></Details>}
           />
@@ -203,7 +174,7 @@ function App() {
         <Col>
           <h3>Price changes:</h3>
           <MaterialReactTable
-            columns={columns2}
+            columns={columnsForDiscouts}
             data={changes}
             renderDetailPanel={({ row }) => <Details addId={row.original.id}></Details>}
           />
