@@ -8,6 +8,8 @@ import Col from 'react-bootstrap/Col';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import MaterialReactTable from 'material-react-table';
 import { LineChart, Line, CartesianGrid, XAxis, Tooltip } from 'recharts';
+import Popup from 'reactjs-popup';
+import 'reactjs-popup/dist/index.css';
 
 
 function App() {
@@ -16,7 +18,23 @@ function App() {
   const [changes, setChanges] = useState([])
   const [dynamic, setDynamic] = useState([])
   const [avgPrices, setAvg] = useState([])
+  const [searchInput, setSearchInput] = useState("");
+  const [openAdv, setOpenAdv] = useState(false)
 
+
+  // search input
+  const handleChange = (e) => {
+    e.preventDefault();
+    setSearchInput(e.target.value);
+  };
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      setOpenAdv(true)
+    }
+  };
+  const closeModal = (e) => {
+    setOpenAdv(false)
+  }
 
   useEffect(() => {
     axios.get('/api/newAdvs' + (window.location.search ?? "")).then((response) => {
@@ -121,11 +139,13 @@ function App() {
     const [history, setHistory] = useState(null)
     useEffect(() => {
       axios.get('/api/adv?id=' + id).then((response) => {
-        setAdd(response.data)
-        setHistory(response.data.history.split(",").map(pair => {
-          let [date, price] = pair.split(";")
-          return { date, price }
-        }))
+        if (response.data) {
+          setAdd(response.data)
+          setHistory(response.data.history.split(",").map(pair => {
+            let [date, price] = pair.split(";")
+            return { date, price }
+          }))
+        }
       })
     }, [id])
 
@@ -150,10 +170,25 @@ function App() {
 
         <Row key={history.date}><Col>{history.date}</Col><Col>{history.price}</Col></Row>
       )}</Col></Row>
-    </Container> : null
+    </Container> : <span>Not found</span>
   }
   function Index() {
     return <Container>
+      <Row>
+        <Col width={200}>
+          <input
+            type="text"
+            value={searchInput}
+            placeholder='Enter ID'
+            onChange={handleChange}
+            onKeyUp={handleKeyPress}
+          />
+          <Popup open={openAdv} closeOnDocumentClick onClose={closeModal}>
+            <div>
+              <Details addId={searchInput}></Details>
+            </div>
+          </Popup></Col>
+      </Row>
       <Row>
         <Col>
           <h3>New advs (24h):</h3>
