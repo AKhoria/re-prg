@@ -7,7 +7,7 @@ export function GetNewAdvs(){
                  FROM   "estates_agg"
                  GROUP  BY id)q
              ON q.id = e.id
-    WHERE  q.createdon > (SELECT Datetime('now', '-1 day'))
+    WHERE  strftime('%Y-%m-%d %H:%M:%S',q.createdon) > (Datetime('now', '-1 day'))
     AND e.size>? AND e.size<? AND e.price>? AND e.price<?
     ORDER  BY e.createdon desc
     `
@@ -46,7 +46,7 @@ FROM   (SELECT id,
                   ) price_history
      FROM   estates_agg
      WHERE  price != "1.0" AND size>? AND size<? AND price>? AND price<?
-            AND updatedon > (SELECT Datetime('now', '-1 day')))q
+            AND strftime('%Y-%m-%d %H:%M:%S',updatedon) > (Datetime('now', '-1 day')))q
 WHERE  q.first_price != q.last_price
     AND Abs(change) < 50
 GROUP  BY q.id,
@@ -89,7 +89,7 @@ FROM   (SELECT id,
                   ) price_history
      FROM   estates_agg
      WHERE  price != "1.0" AND price != "1.0" AND size>? AND size<? AND price>? AND price<?
-            AND updatedon > (SELECT Datetime('now', '-1 day')))q
+            AND strftime('%Y-%m-%d %H:%M:%S',updatedon) > (Datetime('now', '-1 day')))q
 WHERE  q.first_price != q.last_price
     AND Abs(change) < 50
 GROUP  BY
