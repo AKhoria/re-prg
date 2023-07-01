@@ -1,5 +1,5 @@
-export class Start{
-    constructor(bot,sessions) {
+export class Start {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -16,8 +16,8 @@ export class Start{
         return;
     }
 }
-export class Rent{
-    constructor(bot,sessions) {
+export class Rent {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -27,8 +27,8 @@ export class Rent{
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Buy{
-    constructor(bot,sessions) {
+export class Buy {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -38,8 +38,8 @@ export class Buy{
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Subscribe{
-    constructor(bot,sessions,processQueriesFunc) {
+export class Subscribe {
+    constructor(bot, sessions, processQueriesFunc) {
         this.bot = bot
         this.sessions = sessions
         this.processQueries = processQueriesFunc
@@ -52,19 +52,19 @@ export class Subscribe{
         clear(this.bot, msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
 }
-export class Unsubscribe{
-    constructor(bot,sessions) {
+export class Unsubscribe {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
-    name = () =>"/unsubscribe"
+    name = () => "/unsubscribe"
     execute = async msg => {
         await this.sessions.removeFilter(msg.chat.id)
-        clear(this.bot,msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
+        clear(this.bot, msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
     }
 }
-export class Cancel{
-    constructor(bot,sessions) {
+export class Cancel {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -74,8 +74,8 @@ export class Cancel{
         await setup(this.bot, this.sessions, msg)
     }
 }
-export class SetFilter{
-    constructor(bot,sessions) {
+export class SetFilter {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -87,7 +87,7 @@ export class SetFilter{
             filter.currentField == null &&
             filter.fields.has(messageText)) {
             filter.currentField = messageText
-            await  this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
+            await this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
         } else if (
             filter != null &&
             filter.currentField != null) {
@@ -100,7 +100,7 @@ export class SetFilter{
     }
 }
 
-async function setup(bot,sessions, msg, text) {
+async function setup(bot, sessions, msg, text) {
     const filter = await sessions.getFilter(msg.chat.id)
     if (!filter) {
         await bot.sendMessage(msg.chat.id, "something went wrong, please start again")

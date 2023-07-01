@@ -12,7 +12,7 @@ export class Session {
 
     async getFilter(userId) {
         if (this.sessions[userId]) {
-            return this.sessions [userId] 
+            return this.sessions[userId]
         }
         const queries = await this.db.run('SELECT * FROM queries WHERE user_id=?1 AND is_ready=0', [userId]);
         if (queries.Length === 0) {
@@ -25,7 +25,7 @@ export class Session {
     async flushSessionsToDB() {
         const tasks = Object.keys(this.sessions).map(async userId => {
             const filter = this.sessions[userId]
-            if (filter && (new Date - filter.updatedAt) > 60 * 1000) {
+            if (filter && (new Date - filter.updatedAt) > 60 * 60 * 1000) {
                 await this.db.run('DELETE FROM queries WHERE user_id=? AND is_ready=0', [userId])
                 await this.db.run('INSERT INTO queries VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                     [userId, filter.max_price, filter.min_price, filter.max_size, filter.min_size, filter.disposition, filter.type, 0]);
@@ -44,20 +44,20 @@ export class Session {
     }
 
     async removeFilter(userId) {
-        if(this.sessions[userId]){
+        if (this.sessions[userId]) {
             delete this.sessions[userId]
         }
         await this.db.run('DELETE FROM queries WHERE user_id=?', [userId])
     }
 
-    async createQuery(userId){
+    async createQuery(userId) {
         let max_price = null
         let min_price = null
         let max_size = null
         let min_size = null
         let disposition = null
         const filter = await this.getFilter(userId)
-        if(!filter){
+        if (!filter) {
             throw `null filter for ${userId}`
         }
         [...filter.fields.keys()].map(x => { return { "name": x, "value": filter.fields.get(x) } })
@@ -75,7 +75,7 @@ export class Session {
                     case "Max Size":
                         max_size = x.value.replace(/\s/g, '')
                         break;
-    
+
                     default:
                         break;
                 }

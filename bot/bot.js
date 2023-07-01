@@ -3,7 +3,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import express from 'express'
-import {Session} from './session.js'
+import { Session } from './session.js'
 import * as steps from './steps.js'
 import moment from 'moment'
 
@@ -17,7 +17,6 @@ const defaultTimeHours = "6"
 // Telegram Bot Initialization
 const bot = createBot()
 const { db, dbqueries } = await dbInit()
-
 
 async function dbInit() {
     try {
@@ -41,7 +40,6 @@ async function dbInit() {
 }
 
 function createBot() {
-
     if (process.env.POLLING == "true") {
         return new TelegramBot(token, { polling: true })
     }
@@ -70,49 +68,46 @@ function createBot() {
     return bot;
 }
 
-
-
-
 const sessions = new Session(dbqueries)
 const handlers = new Map()
 const s = [
-    new steps.Start(bot,sessions), 
-    new steps.Buy(bot,sessions), 
-    new steps.Rent(bot,sessions), 
-    new steps.Cancel(bot,sessions), 
-    new steps.Subscribe(bot,sessions,processQueries), 
-    new steps.Unsubscribe(bot,sessions), 
-    new steps.SetFilter(bot,sessions)]
-s.forEach(x=>handlers.set(x.name(), x))
+    new steps.Start(bot, sessions),
+    new steps.Buy(bot, sessions),
+    new steps.Rent(bot, sessions),
+    new steps.Cancel(bot, sessions),
+    new steps.Subscribe(bot, sessions, processQueries),
+    new steps.Unsubscribe(bot, sessions),
+    new steps.SetFilter(bot, sessions)]
+s.forEach(x => handlers.set(x.name(), x))
 
 
 bot.on("message", async (msg) => {
     let messageText = msg.text;
     console.log(`calling ${messageText}`)
-    try{
-        if(handlers.has(messageText)){  
+    try {
+        if (handlers.has(messageText)) {
             await handlers.get(messageText).execute(msg)
-        }else{
+        } else {
             await handlers.get("*").execute(msg)
         }
-    }catch(e){
+    } catch (e) {
         console.error(e)
     }
 })
 
-
-function runJob() {
+async function runJob() {
     // Job running every hour
-    setTimeout(runJob, 3600000 * defaultTimeHours); // switch back to hour
+    setTimeout(runJob, 10 * defaultTimeHours); // switch back to hour
     console.log("Run job!")
     // Retrieve queries from the database
     processQueries();
+    await sessions.flushSessionsToDB()
 }
 
-
-const prevRun = (Math.floor(moment().hours() / defaultTimeHours))*defaultTimeHours
-let pause = defaultTimeHours*60*60*1000 - (moment() - moment().set("hours", prevRun).set("minutes", 0))
+const prevRun = (Math.floor(moment().hours() / defaultTimeHours)) * defaultTimeHours
+let pause = defaultTimeHours * 60 * 60 * 1000 - (moment() - moment().set("hours", prevRun).set("minutes", 0))
 console.log(`Job will be run in ${pause} milliseconds`)
+pause = 1000
 setTimeout(runJob, pause)
 
 
@@ -145,9 +140,9 @@ async function processQueries(userId, lastHours) {
         await Promise.all(users.map(async u => {
             const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
             await bot.sendMessage(u, `results according your filter(${filterName}) for the last ${lastHours} hours:`)
-            if (rows.length>10){
-                bot.sendMessage(u, rows.map(r=>r.url).join(" /n"))
-            }else{
+            if (rows.length > 10) {
+                bot.sendMessage(u, rows.map(r => r.url).join(" /n"))
+            } else {
                 rows.forEach(r => bot.sendMessage(u, r.url))
             }
         }));
