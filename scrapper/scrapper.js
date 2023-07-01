@@ -3,35 +3,45 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import {open} from 'sqlite';
 
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
 
-const isRent = (process.argv.filter(x => x === "--rent").length > 0)
-const tableName = isRent ? "estates_rent_agg" : "estates_agg"
+async function scrapp() {
+    const bezrealky = await getBezrealkyData()
+    let updatedCount = await upgradeAggregatedData(bezrealky)
+    console.log(`updated bezrealky loaded ${bezrealky.length} saved: ${updatedCount}`)
 
-const bezrealky = await getBezrealkyData()
-let updatedCount = await upgradeAggregatedData(bezrealky)
-console.log(`updated bezrealky loaded ${bezrealky.length} saved: ${updatedCount}`)
+    const sreality = await getSrealityData()
+    updatedCount = await upgradeAggregatedData(sreality)
+    console.log(`updated sreality loaded ${sreality.length} saved: ${updatedCount}`)
+}
+let isRent = false
+console.log("Load selling")
+await scrapp()
+isRent = true
+console.log("Load renting")
+await scrapp()
 
-const sreality = await getSrealityData()
-updatedCount = await upgradeAggregatedData(sreality)
-console.log(`updated sreality loaded ${sreality.length} saved: ${updatedCount}`)
+function tableName() {
+    return isRent ? "estates_rent_agg" : "estates_agg";
+}
+
 
 async function getBezrealkyData() {
     const url = 'https://api.bezrealitky.cz/graphql/';
     const filename = path.resolve(__dirname, 'query.txt');
     const content = fs.readFileSync(filename, 'utf8');
-    const bezRealityDispozition = { "DISP_1_1": "1+1 ", "DISP_1_IZB": "jednopokojový ", "DISP_1_KK": "1+kk ", "DISP_2_1": "2+1 ", "DISP_2_IZB": "dvoupokojový ", "DISP_2_KK": "2+kk ", "DISP_3_1": "3+1 ", "DISP_3_IZB": "třípokojový ", "DISP_3_KK": "3+kk ", "DISP_4_1": "4+1 ", "DISP_4_IZB": "4pokojový ", "DISP_4_KK": "4+kk ", "DISP_5_1": "5+1 ", "DISP_5_IZB": "5pokojový ", "DISP_5_KK": "5+kk ", "DISP_6_1": "6+1 ", "DISP_6_IZB": "6pokojový ", "DISP_6_KK": "6+kk ", "DISP_7_1": "7+1 " }
+    const bezRealityDispozition = {"DISP_1_1": "1+1 ", "DISP_1_IZB": "jednopokojový ", "DISP_1_KK": "1+kk ", "DISP_2_1": "2+1 ", "DISP_2_IZB": "dvoupokojový ", "DISP_2_KK": "2+kk ", "DISP_3_1": "3+1 ", "DISP_3_IZB": "třípokojový ", "DISP_3_KK": "3+kk ", "DISP_4_1": "4+1 ", "DISP_4_IZB": "4pokojový ", "DISP_4_KK": "4+kk ", "DISP_5_1": "5+1 ", "DISP_5_IZB": "5pokojový ", "DISP_5_KK": "5+kk ", "DISP_6_1": "6+1 ", "DISP_6_IZB": "6pokojový ", "DISP_6_KK": "6+kk ", "DISP_7_1": "7+1 "}
 
     // Data for POST request
     const payload = {
         "operationName": "AdvertList",
-        "variables": { "limit": 300, "offset": 0, "order": "TIMEORDER_DESC", "offerType": isRent ? ["PRONAJEM"] : ["PRODEJ"], "estateType": ["BYT"], "ownership": ["OSOBNI"], "regionOsmIds": ["R435541"], "locale": "CS" },
+        "variables": {"limit": 300, "offset": 0, "order": "TIMEORDER_DESC", "offerType": isRent ? ["PRONAJEM"] : ["PRODEJ"], "estateType": ["BYT"], "ownership": ["OSOBNI"], "regionOsmIds": ["R435541"], "locale": "CS"},
         "query": content
     };
 
@@ -39,7 +49,7 @@ async function getBezrealkyData() {
     while (true) {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
 
@@ -78,7 +88,7 @@ async function getBezrealkyData() {
     return newData
 }
 async function getSrealityData() {
-    const headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36' };
+    const headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'};
     const srealityDisposition = {
         2: "1+kk",
         3: "1+1",
@@ -99,7 +109,7 @@ async function getSrealityData() {
     async function loadChunk(page) {
         const url = getUrl(page);
 
-        const response1 = await fetch(url, { headers });
+        const response1 = await fetch(url, {headers});
         const data1 = await response1.json();
 
         if (!data1._embedded.estates || data1._embedded.estates.length === 0) {
@@ -124,7 +134,7 @@ async function getSrealityData() {
                 size: matchSize && matchSize[1] ? matchSize[1] : "",
                 jsonData: JSON.stringify(item)
             }
-            sqlEntry.url = `https://www.sreality.cz/detail/${(isRent?"pronajem":"prodej")}/byt/${sqlEntry.disposition}/${sqlEntry.locality}/${sqlEntry.id}`
+            sqlEntry.url = `https://www.sreality.cz/detail/${(isRent ? "pronajem" : "prodej")}/byt/${sqlEntry.disposition}/${sqlEntry.locality}/${sqlEntry.id}`
             newData.push(sqlEntry)
         }
         return newData
@@ -144,19 +154,19 @@ async function getSrealityData() {
 
 async function upgradeAggregatedData(data) {
     let saved = 0
-    const db = await open({ filename: path.resolve(__dirname, 'estates.db'), driver: sqlite3.Database });
+    const db = await open({filename: path.resolve(__dirname, 'estates.db'), driver: sqlite3.Database});
     data.forEach(async item => {
-        const result = await db.get(`SELECT price FROM ${tableName} WHERE id = ? order by createdOn desc`, item.id);
+        const result = await db.get(`SELECT price FROM ${tableName()} WHERE id = ? order by createdOn desc`, item.id);
 
         if (result && result.price === item.price) {
             // The data hash exists, update the updatedOn field
-            await db.run(`UPDATE ${tableName} SET updatedOn = ? WHERE id = ?`, item.createdOn, item.id);
+            await db.run(`UPDATE ${tableName()} SET updatedOn = ? WHERE id = ?`, item.createdOn, item.id);
 
         } else {
             // The data is new or different, insert it into the database
             const keys = Object.keys(item)
             const vals = keys.map(x => item[x])
-            await db.run(`INSERT INTO ${tableName} (${keys.join(",")}) VALUES (${keys.map(x => "?").join(",")})`, vals);
+            await db.run(`INSERT INTO ${tableName()} (${keys.join(",")}) VALUES (${keys.map(x => "?").join(",")})`, vals);
             saved += 1;
         }
     });
