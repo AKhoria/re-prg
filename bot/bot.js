@@ -1,14 +1,18 @@
+/* eslint-disable no-prototype-builtins */
 import TelegramBot from 'node-telegram-bot-api';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import express from 'express'
+import {Session} from './session.js'
+import * as steps from './steps.js'
+import moment from 'moment'
 
 const token = process.env.TOKEN;
 const url = process.env.URL
 const port = process.env.PORT
 const dbPath = process.env.DB_PATH || "./re-prg/site/estates.db";
-const db2Path = process.env.DB2_PATH || "./estates.db";
-const defaultTime = "-6"
+const db2Path = process.env.DB2_PATH || "./estates-bot.db";
+const defaultTimeHours = "6"
 
 // Telegram Bot Initialization
 const bot = createBot()
@@ -25,9 +29,11 @@ async function dbInit() {
             min_price INTEGER,
             max_size INTEGER,
             min_size INTEGER,
-            disposition TEXT
+            disposition TEXT,
+            type TEXT,
+            is_ready INTEGER
           )`)
-        return {db, dbqueries}
+        return { db, dbqueries }
     } catch (e) {
         console.error([e, dbPath, db2Path]);
         throw e;
@@ -67,171 +73,59 @@ function createBot() {
 
 
 
-const sessions = {}
-const params = ["Min Size", 'Max Size', 'Min Price', 'Max Price', 'Disposition']
-function createFilter() {
-    return {
-        "fields": {
-            "Min Size": null,
-            'Max Size': null,
-            'Min Price': null,
-            'Max Price': null,
-        },
-        //'Disposition':null,
-        'currentField': null
-    }
-}
+const sessions = new Session(dbqueries)
+const handlers = new Map()
+const s = [
+    new steps.Start(bot,sessions), 
+    new steps.Buy(bot,sessions), 
+    new steps.Rent(bot,sessions), 
+    new steps.Cancel(bot,sessions), 
+    new steps.Subscribe(bot,sessions,processQueries), 
+    new steps.Unsubscribe(bot,sessions), 
+    new steps.SetFilter(bot,sessions)]
+s.forEach(x=>handlers.set(x.name(), x))
 
-function setup(msg, text) {
-    const filter = sessions[msg.chat.id]
-    const params = Object.keys(filter.fields).map(key => `${key}(${filter.fields[key] ?? 'not set'})`)
-    params.push("cancel")
-    const opts = {
-        reply_to_message_id: msg.message_id,
-        reply_markup: JSON.stringify({
-            keyboard: [
-                ...params.map(x => [x]),
-                ['subscribe', 'unsubscribe']
-            ]
-        })
-    };
-    bot.sendMessage(msg.chat.id, text ?? 'Set filter or press subscribe', opts);
-}
-
-function clear(msg, text) {
-    const opts = {
-        reply_markup: {
-            remove_keyboard: true
-        }
-    };
-    bot.sendMessage(msg.chat.id, text ?? 'write /start to start again', opts)
-}
 
 bot.on("message", async (msg) => {
-    const chatId = msg.chat.id;
     let messageText = msg.text;
-    if (!sessions[msg.chat.id]) {
-        sessions[msg.chat.id] = createFilter()
-    }
-    if (messageText && messageText.startsWith('/start')) {
-        bot.sendMessage(chatId, 'Welcome! Please choose parameters of the appartament of your dream and press "subscribe"');
-        setup(msg)
-        return;
-    }
-
-    switch (messageText) {
-        case "subscribe":
-            bot.sendMessage(msg.chat.id, `Subscribed! Will be seinding updates every 8 hours`);
-            await subscribeUser(msg.chat.id);
-            processQueries(msg.chat.id, defaultTime)
-            clear(msg, "You can unsubscribe or create a new subscribtion by /start")
-            break;
-        case "unsubscribe":
-            await unsubscribeUser(msg.chat.id)
-            bot.sendMessage(msg.chat.id, `Unsubscribed!`);
-            clear(msg, "Unsubscribed! You can subscribe by /start")
-            break
-        case "Disposition":
-            bot.sendMessage(msg.chat.id, `Aren't not supported yet`);
-            setup(msg)
-            break
-        case "cancel":
-            sessions[msg.chat.id].currentField = null
-            sessions[msg.chat.id].fields[sessions[msg.chat.id].currentField] = null
-            setup(msg)
-            break
-        default:
-            messageText = messageText.replace(/\(.*\)/, "")
-            if (sessions[msg.chat.id].currentField == null &&
-                sessions[msg.chat.id].fields.hasOwnProperty(messageText)) {
-                sessions[msg.chat.id].currentField = messageText
-                bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
-            } else if (sessions[msg.chat.id].currentField != null) {
-                sessions[msg.chat.id].fields[sessions[msg.chat.id].currentField] = messageText
-                sessions[msg.chat.id].currentField = null
-                setup(msg)
-            } else {
-                bot.sendMessage(msg.chat.id, `Not expected command, write /start to start again`);
-            }
+    console.log(`calling ${messageText}`)
+    try{
+        if(handlers.has(messageText)){  
+            await handlers.get(messageText).execute(msg)
+        }else{
+            await handlers.get("*").execute(msg)
+        }
+    }catch(e){
+        console.error(e)
     }
 })
-
-async function unsubscribeUser(userId) {
-    delete sessions[userId]
-    await dbqueries.run('DELETE FROM queries WHERE user_id=?', [userId])
-}
-
-async function subscribeUser(userId) {
-    let max_price = null
-    let min_price = null
-    let max_size = null
-    let min_size = null
-    let disposition = null
-    const keys = Object.keys(sessions[userId].fields)
-    keys.map(x => { return { "name": x, "value": sessions[userId].fields[x] } })
-        .filter(x => x.value)?.forEach(x => {
-            switch (x.name) {
-                case "Min Price":
-                    min_price = x.value.replace(/\s/g, '')
-                    break;
-                case "Max Price":
-                    max_price = x.value.replace(/\s/g, '')
-                    break;
-                case "Min Size":
-                    min_size = x.value.replace(/\s/g, '')
-                    break;
-                case "Max Size":
-                    max_size = x.value.replace(/\s/g, '')
-                    break;
-
-                default:
-                    break;
-            }
-        })
-    // move to await
-    console.log([`subscrb`, userId, max_price, min_price, max_size, min_size, disposition])
-    await dbqueries.run('DELETE FROM queries WHERE user_id=?', [userId])
-    await dbqueries.run('INSERT INTO queries VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, max_price, min_price, max_size, min_size, disposition]);
-    delete sessions[userId]
-}
 
 
 function runJob() {
     // Job running every hour
-    setTimeout(runJob, 3600000 * 8); // switch back to hour
+    setTimeout(runJob, 3600000 * defaultTimeHours); // switch back to hour
     console.log("Run job!")
     // Retrieve queries from the database
     processQueries();
 }
 
-runJob();
 
+const prevRun = (Math.floor(moment().hours() / defaultTimeHours))*defaultTimeHours
+let pause = defaultTimeHours*60*60*1000 - (moment() - moment().set("hours", prevRun).set("minutes", 0))
+console.log(`Job will be run in ${pause} milliseconds`)
+setTimeout(runJob, pause)
 
-
-const getRESQL = `
-SELECT e.url
-FROM   "estates_agg" e
-       JOIN (SELECT Min(createdon) createdOn,
-                    id
-             FROM   "estates_agg"
-             GROUP  BY id)q
-         ON q.id = e.id
-WHERE  q.createdon > (SELECT Datetime('now', ?1))
-AND e.size>?2 AND e.size<?3 AND e.price>?4 AND  e.price<?5 AND (?6 IS NULL OR e.disposition=?6)
-ORDER  BY e.createdon desc
-`
 
 async function processQueries(userId, lastHours) {
     if (!lastHours) {
-        lastHours = defaultTime
+        lastHours = defaultTimeHours
     }
-    const queries = await dbqueries.all('SELECT * FROM queries WHERE user_id=?1 OR ?1 IS NULL', [userId]);
+    const queries = await dbqueries.all('SELECT user_id, max_price, min_price, max_size, min_size, type FROM queries WHERE (user_id=?1 OR ?1 IS NULL) AND is_ready=1 ', [userId]);
 
     const q = {};
     queries.forEach((query) => {
-        const { user_id, max_price, min_price, max_size, min_size, disposition } = query;
-        const key = [min_size, max_size, min_price, max_price];
+        const { user_id, max_price, min_price, max_size, min_size, type } = query;
+        const key = [min_size, max_size, min_price, max_price, type];
         if (!q[key]) {
             q[key] = [user_id];
         } else {
@@ -241,18 +135,42 @@ async function processQueries(userId, lastHours) {
 
     const tasks = Object.keys(q).map(async k => {
         const users = q[k];
-        const [min_size, max_size, min_price, max_price] = k.split(",").map(x => x === '' ? null : x)
-        const params = [`${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, null]
-        console.log([getRESQL, users, params])
-        const rows = await db.all(getRESQL, params);
+        const [min_size, max_size, min_price, max_price, type] = k.split(",").map(x => x === '' ? null : x)
+        const params = [`-${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, null]
+        const sql = getQuery(type)
+        console.log([sql, users, params])
+        const rows = await db.all(sql, params);
         console.log(`found ${rows.length} rows`)
         //TODO send group of user
-        users.forEach(u => {
-            //bot.sendMessage(user_id, rows.map(r=>r.url).join("/n"))
-            rows.forEach(r => bot.sendMessage(u, r.url));
-        });
+        await Promise.all(users.map(async u => {
+            const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
+            await bot.sendMessage(u, `results according your filter(${filterName}) for the last ${lastHours} hours:`)
+            if (rows.length>10){
+                bot.sendMessage(u, rows.map(r=>r.url).join(" /n"))
+            }else{
+                rows.forEach(r => bot.sendMessage(u, r.url))
+            }
+        }));
     })
 
     await Promise.all(tasks);
 }
 
+function printFilter(name, value) {
+    return `${name}: ${value ?? 'Not Set'}`;
+}
+
+function getQuery(type) {
+    return `
+SELECT e.url
+FROM   "estates_agg" e
+       JOIN (SELECT Min(createdon) createdOn,
+                    id
+             FROM   "${(type == "buy" ? "estates_agg" : "estates_rent_agg")}"
+             GROUP  BY id)q
+         ON q.id = e.id
+WHERE  strftime('%Y-%m-%d %H:%M:%S',q.createdon) > (SELECT Datetime('now', ?1))
+AND e.size>=?2 AND e.size<=?3 AND e.price>=?4 AND  e.price<=?5 AND (?6 IS NULL OR e.disposition=?6)
+ORDER  BY e.createdon desc
+`
+}
