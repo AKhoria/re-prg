@@ -100,7 +100,7 @@ async function runJob() {
     setTimeout(runJob, 60 * 60 * 1000 * defaultTimeHours); // switch back to hour
     console.log("Run job!")
     // Retrieve queries from the database
-    processQueries();
+    await processQueries();
     await sessions.flushSessionsToDB()
 }
 
@@ -137,17 +137,17 @@ async function processQueries(userId, lastHours) {
         console.log(`found ${rows.length} rows`)
         //TODO send group of user
         await Promise.all(users.map(async u => {
-            const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
+            const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
             await bot.sendMessage(u, `results according your filter(${filterName}) for the last ${lastHours} hours:`)
             if (rows.length > 10) {
                 let text = rows.map(r => r.url).join(" /n")
                 if(text.length>4096){
                     text = "too much results, probably your filter too wide"
                 }
-                bot.sendMessage(u, text)
+                await bot.sendMessage(u, text)
                 
             } else {
-                rows.forEach(r => bot.sendMessage(u, r.url))
+                await Promise.all(rows.map(async r => await bot.sendMessage(u, r.url)))
             }
         }));
     })

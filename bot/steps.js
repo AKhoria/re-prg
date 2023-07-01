@@ -49,7 +49,8 @@ export class Subscribe{
         await this.sessions.createQuery(msg.chat.id);
         await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be sending updates every 3 hours`);
         await this.processQueries(msg.chat.id, "24")
-        clear(this.bot,msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
+        await clear(this.bot,msg)
+        await this.bot.sendMessage(msg.chat.id, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
 }
 export class Unsubscribe{
@@ -70,8 +71,8 @@ export class Cancel{
     }
     name = () => "cancel"
     execute = async msg => {
-        this.sessions.clear(msg.chat.id)
-        await this.bot.sendMessage(msg.chat.id,"Use /buy or /rent to start")
+        await this.sessions.clear(msg.chat.id)
+        await clear(this.bot,msg, "Use /buy or /rent to start")
     }
 }
 export class SetFilter{
@@ -108,13 +109,12 @@ async function setup(bot,sessions, msg, text) {
     }
 
     const params = [...filter.fields.keys()].map(key => `${key}(${filter.fields.get(key) ?? 'not set'})`)
-    params.push("cancel")
     const opts = {
         reply_to_message_id: msg.message_id,
         reply_markup: JSON.stringify({
             keyboard: [
                 ...params.map(x => [x]),
-                ['subscribe']
+                ['subscribe','cancel']
             ]
         })
     };
@@ -128,5 +128,8 @@ async function clear(bot, msg, text) {
             remove_keyboard: true
         }
     };
-    await bot.sendMessage(msg.chat.id, text ?? 'write /start to start again', opts)
+    if(text){
+        await bot.sendMessage(msg.chat.id, text, opts)
+    }
+    
 }
