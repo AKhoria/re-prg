@@ -102,7 +102,7 @@ async function getSrealityData() {
         11: "5+1"
     }
     const getUrl = (page) => {
-        const baseUrl = `https://www.sreality.cz/api/cs/v2/estates?category_main_cb=1&category_type_cb=${(isRent ? '2' : '1')}&estate_age=8&locality_region_id=10&no_auction=1&no_shares=1&ownership=1`;
+        const baseUrl = `https://www.sreality.cz/api/cs/v2/estates?category_main_cb=1&category_type_cb=${(isRent ? '2' : '1')}&estate_age=2&locality_region_id=10&no_auction=1&no_shares=1`;
         return baseUrl + `&page=${page}&per_page=100`;
     }
 

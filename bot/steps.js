@@ -47,7 +47,7 @@ export class Subscribe{
     name = () => "subscribe"
     execute = async msg => {
         await this.sessions.createQuery(msg.chat.id);
-        await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be seinding updates every hour`);
+        await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be sending updates every 3 hours`);
         await this.processQueries(msg.chat.id, "24")
         clear(this.bot,msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
