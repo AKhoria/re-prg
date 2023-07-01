@@ -23,15 +23,16 @@ export class Session {
         return this.sessions[userId]
     }
     async flushSessionsToDB() {
-        await Promise.all(Object.keys(this.sessions).forEach(async userId => {
+        const tasks = Object.keys(this.sessions).map(async userId => {
             const filter = this.sessions[userId]
-            if ((new Date - filter.updatedAt) > 60 * 60 * 1000) {
+            if (filter && (new Date - filter.updatedAt) > 60 * 1000) {
                 await this.db.run('DELETE FROM queries WHERE user_id=? AND is_ready=0', [userId])
                 await this.db.run('INSERT INTO queries VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                     [userId, filter.max_price, filter.min_price, filter.max_size, filter.min_size, filter.disposition, filter.type, 0]);
                 delete this.sessions[userId]
             }
-        }));
+        })
+        await Promise.all(tasks);
     }
 
     clear(userId) {
