@@ -97,7 +97,7 @@ bot.on("message", async (msg) => {
 
 async function runJob() {
     // Job running every hour
-    setTimeout(runJob, 10 * defaultTimeHours); // switch back to hour
+    setTimeout(runJob, 60 * 60 * 1000 * defaultTimeHours); // switch back to hour
     console.log("Run job!")
     // Retrieve queries from the database
     processQueries();
@@ -107,7 +107,6 @@ async function runJob() {
 const prevRun = (Math.floor(moment().hours() / defaultTimeHours)) * defaultTimeHours
 let pause = defaultTimeHours * 60 * 60 * 1000 - (moment() - moment().set("hours", prevRun).set("minutes", 0))
 console.log(`Job will be run in ${pause} milliseconds`)
-pause = 1000
 setTimeout(runJob, pause)
 
 
