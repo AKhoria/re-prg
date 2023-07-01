@@ -12,7 +12,7 @@ const url = process.env.URL
 const port = process.env.PORT
 const dbPath = process.env.DB_PATH || "./re-prg/site/estates.db";
 const db2Path = process.env.DB2_PATH || "./estates-bot.db";
-const defaultTimeHours = "6"
+const defaultTimeHours = "1"
 
 // Telegram Bot Initialization
 const bot = createBot()
