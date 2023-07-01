@@ -1,5 +1,5 @@
-export class Start {
-    constructor(bot, sessions) {
+export class Start{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -16,8 +16,8 @@ export class Start {
         return;
     }
 }
-export class Rent {
-    constructor(bot, sessions) {
+export class Rent{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -27,8 +27,8 @@ export class Rent {
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Buy {
-    constructor(bot, sessions) {
+export class Buy{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -38,8 +38,8 @@ export class Buy {
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Subscribe {
-    constructor(bot, sessions, processQueriesFunc) {
+export class Subscribe{
+    constructor(bot,sessions,processQueriesFunc) {
         this.bot = bot
         this.sessions = sessions
         this.processQueries = processQueriesFunc
@@ -49,33 +49,33 @@ export class Subscribe {
         await this.sessions.createQuery(msg.chat.id);
         await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be seinding updates every 8 hours`);
         await this.processQueries(msg.chat.id, "24")
-        clear(this.bot, msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
+        clear(this.bot,msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
 }
-export class Unsubscribe {
-    constructor(bot, sessions) {
+export class Unsubscribe{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
-    name = () => "/unsubscribe"
+    name = () =>"/unsubscribe"
     execute = async msg => {
         await this.sessions.removeFilter(msg.chat.id)
-        clear(this.bot, msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
+        await clear(this.bot,msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
     }
 }
-export class Cancel {
-    constructor(bot, sessions) {
+export class Cancel{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
     name = () => "cancel"
     execute = async msg => {
-        this.sessions.clear(this.bot, msg.chat.id)
-        await setup(this.bot, this.sessions, msg)
+        this.sessions.clear(msg.chat.id)
+        await this.bot.sendMessage(msg.chat.id,"Use /buy or /rent to start")
     }
 }
-export class SetFilter {
-    constructor(bot, sessions) {
+export class SetFilter{
+    constructor(bot,sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -87,7 +87,7 @@ export class SetFilter {
             filter.currentField == null &&
             filter.fields.has(messageText)) {
             filter.currentField = messageText
-            await this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
+            await  this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
         } else if (
             filter != null &&
             filter.currentField != null) {
@@ -100,7 +100,7 @@ export class SetFilter {
     }
 }
 
-async function setup(bot, sessions, msg, text) {
+async function setup(bot,sessions, msg, text) {
     const filter = await sessions.getFilter(msg.chat.id)
     if (!filter) {
         await bot.sendMessage(msg.chat.id, "something went wrong, please start again")
@@ -121,12 +121,12 @@ async function setup(bot, sessions, msg, text) {
     bot.sendMessage(msg.chat.id, text ?? 'Set filter or press subscribe', opts);
 }
 
-function clear(bot, msg, text) {
+async function clear(bot, msg, text) {
     const opts = {
         reply_markup: {
             reply_to_message_id: msg.message_id,
             remove_keyboard: true
         }
     };
-    bot.sendMessage(msg.chat.id, text ?? 'write /start to start again', opts)
+    await bot.sendMessage(msg.chat.id, text ?? 'write /start to start again', opts)
 }

@@ -14,8 +14,8 @@ export class Session {
         if (this.sessions[userId]) {
             return this.sessions[userId]
         }
-        const queries = await this.db.run('SELECT * FROM queries WHERE user_id=?1 AND is_ready=0', [userId]);
-        if (queries.Length === 0) {
+        const queries = await this.db.all('SELECT * FROM queries WHERE user_id=?1 AND is_ready=0', [userId]);
+        if (queries.length === 0) {
             return null
         } else {
             this.sessions[userId] = queries[0]
@@ -35,8 +35,8 @@ export class Session {
         await Promise.all(tasks);
     }
 
-    clear(userId) {
-        const filter = this.getFilter(userId)
+    async clear(userId) {
+        const filter = await this.getFilter(userId)
         if (filter) {
             const type = this.sessions[userId].type
             this.newFilter(userId, type)
