@@ -32,6 +32,10 @@ async function dbInit() {
             type TEXT,
             is_ready INTEGER
           )`)
+          await dbqueries.run(`CREATE TABLE IF NOT EXISTS messages (
+            user_id INTEGER,
+            message TEXT
+          )`)
         return { db, dbqueries }
     } catch (e) {
         console.error([e, dbPath, db2Path]);
@@ -103,6 +107,7 @@ async function runJob() {
     try {
         await processQueries();
         await sessions.flushSessionsToDB()
+        await sendMessages()
     } catch (e) {
         console.error(e)
     }
@@ -113,6 +118,16 @@ let pause = defaultTimeHours * 60 * 60 * 1000 - (moment() - moment().set("hours"
 console.log(`Job will be run in ${pause} milliseconds`)
 setTimeout(runJob, pause + 1000*60*5) // start at x*defaultTimeHours + 5min
 
+async function sendMessages(){
+    const msgs = await dbqueries.all('SELECT user_id, message FROM messages');
+    const users = await dbqueries.all('SELECT user_id FROM queries');
+    const userSet = new Set(users.map(x=>x.user_id))
+    msgs.forEach(m =>{
+        userSet.forEach(async u => {
+            await bot.sendMessage(u, m.message)
+        })
+    })
+}
 
 async function processQueries(userId, lastHours) {
     if (!lastHours) {
