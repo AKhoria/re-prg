@@ -14,18 +14,24 @@ const __dirname = path.dirname(__filename);
 async function scrapp() {
     const bezrealky = await getBezrealkyData()
     let updatedCount = await upgradeAggregatedData(bezrealky)
-    console.log(`updated bezrealky loaded ${bezrealky.length} saved: ${updatedCount}`)
+    console.log(`${new Date()} updated bezrealky loaded ${bezrealky.length} saved: ${updatedCount}`)
 
     const sreality = await getSrealityData()
     updatedCount = await upgradeAggregatedData(sreality)
-    console.log(`updated sreality loaded ${sreality.length} saved: ${updatedCount}`)
+    console.log(`${new Date()} updated sreality loaded ${sreality.length} saved: ${updatedCount}`)
 }
 let isRent = false
-console.log("Load selling")
-await scrapp()
-isRent = true
-console.log("Load renting")
-await scrapp()
+try{
+    console.log(["Load selling", new Date()])
+    await scrapp()
+    isRent = true
+    console.log(["Load renting", new Date()])
+    await scrapp()
+}catch(e){
+    console.log("stopped due to error")
+    console.error(e)
+}
+
 
 function tableName() {
     return isRent ? "estates_rent_agg" : "estates_agg";

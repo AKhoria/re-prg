@@ -97,7 +97,7 @@ bot.on("message", async (msg) => {
 
 async function runJob() {
     // Job running every hour
-    setTimeout(runJob, 60 * 60 * 1000 * defaultTimeHours); // switch back to hour
+    setTimeout(runJob, 60 * 60 * 1000 * defaultTimeHours);
     console.log("Run job!")
     // Retrieve queries from the database
     try {
@@ -111,7 +111,7 @@ async function runJob() {
 const prevRun = (Math.floor(moment().hours() / defaultTimeHours)) * defaultTimeHours
 let pause = defaultTimeHours * 60 * 60 * 1000 - (moment() - moment().set("hours", prevRun).set("minutes", 0))
 console.log(`Job will be run in ${pause} milliseconds`)
-setTimeout(runJob, pause)
+setTimeout(runJob, pause + 1000*60*5) // start at x*defaultTimeHours + 5min
 
 
 async function processQueries(userId, lastHours) {
@@ -141,17 +141,18 @@ async function processQueries(userId, lastHours) {
         console.log(`found ${rows.length} rows`)
         //TODO send group of user
         await Promise.all(users.map(async u => {
-            const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
-            await bot.sendMessage(u, `results according your filter(${filterName}) for the last ${lastHours} hours:`)
-            if (rows.length > 10) {
-                let text = rows.map(r => r.url).join(" /n")
-                if (text.length > 4096) {
-                    text = "too much results, probably your filter too wide"
+            if (rows.length != 0) {
+                const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
+                await bot.sendMessage(u, `Results according your filter(${filterName}) for the last ${lastHours} hours:`)
+                if (rows.length > 10) {
+                    let text = rows.map(r => r.url).join(" /n")
+                    if (text.length > 4096) {
+                        text = "too much results, probably your filter too wide"
+                    }
+                    await bot.sendMessage(u, text)
+                } else {
+                    await Promise.all(rows.map(async r => await bot.sendMessage(u, r.url)))
                 }
-                await bot.sendMessage(u, text)
-
-            } else {
-                await Promise.all(rows.map(async r => await bot.sendMessage(u, r.url)))
             }
         }));
     })
