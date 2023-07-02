@@ -100,8 +100,12 @@ async function runJob() {
     setTimeout(runJob, 60 * 60 * 1000 * defaultTimeHours); // switch back to hour
     console.log("Run job!")
     // Retrieve queries from the database
-    await processQueries();
-    await sessions.flushSessionsToDB()
+    try {
+        await processQueries();
+        await sessions.flushSessionsToDB()
+    } catch (e) {
+        console.error(e)
+    }
 }
 
 const prevRun = (Math.floor(moment().hours() / defaultTimeHours)) * defaultTimeHours
@@ -141,11 +145,11 @@ async function processQueries(userId, lastHours) {
             await bot.sendMessage(u, `results according your filter(${filterName}) for the last ${lastHours} hours:`)
             if (rows.length > 10) {
                 let text = rows.map(r => r.url).join(" /n")
-                if(text.length>4096){
+                if (text.length > 4096) {
                     text = "too much results, probably your filter too wide"
                 }
                 await bot.sendMessage(u, text)
-                
+
             } else {
                 await Promise.all(rows.map(async r => await bot.sendMessage(u, r.url)))
             }
