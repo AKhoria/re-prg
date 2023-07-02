@@ -32,11 +32,9 @@ try{
     console.error(e)
 }
 
-
 function tableName() {
     return isRent ? "estates_rent_agg" : "estates_agg";
 }
-
 
 async function getBezrealkyData() {
     const url = 'https://api.bezrealitky.cz/graphql/';

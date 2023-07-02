@@ -1,3 +1,4 @@
 node_modules
 site/estates.db
 site/frontend/build/*
+.eslintrc.cjs

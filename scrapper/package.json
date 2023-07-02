@@ -14,5 +14,9 @@
     "node-fetch": "^3.3.0",
     "sqlite": "^4.1.2",
     "sqlite3": "^5.1.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.44.0",
+    "eslint-config-google": "^0.14.0"
   }
 }
