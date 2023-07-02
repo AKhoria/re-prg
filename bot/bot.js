@@ -20,7 +20,7 @@ const { db, dbqueries } = await dbInit()
 
 async function dbInit() {
     try {
-        const db = await open({ filename: dbPath, driver: sqlite3.Database });
+        const db = await open({ filename: dbPath, driver: sqlite3.Database, mode: sqlite3.OPEN_READONLY });
         const dbqueries = await open({ filename: db2Path, driver: sqlite3.Database });
         await dbqueries.run(`CREATE TABLE IF NOT EXISTS queries (
             user_id INTEGER,
