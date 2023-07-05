@@ -49,8 +49,7 @@ export class Subscribe{
         await this.sessions.createQuery(msg.chat.id);
         await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be sending updates every 3 hours`);
         await this.processQueries(msg.chat.id, "24")
-        await clear(this.bot,msg)
-        await this.bot.sendMessage(msg.chat.id, "You can /unsubscribe or create a new subscribtion replacing the current one")
+        await clear(this.bot,msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
 }
 export class Unsubscribe{
@@ -128,8 +127,5 @@ async function clear(bot, msg, text) {
             remove_keyboard: true
         }
     };
-    if(text){
-        await bot.sendMessage(msg.chat.id, text, opts)
-    }
-    
+    await bot.sendMessage(msg.chat.id, text, opts)
 }

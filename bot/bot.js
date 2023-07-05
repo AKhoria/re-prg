@@ -32,7 +32,7 @@ async function dbInit() {
             type TEXT,
             is_ready INTEGER
           )`)
-          await dbqueries.run(`CREATE TABLE IF NOT EXISTS messages (
+        await dbqueries.run(`CREATE TABLE IF NOT EXISTS messages (
             user_id INTEGER,
             message TEXT
           )`)
@@ -118,15 +118,16 @@ let pause = defaultTimeHours * 60 * 60 * 1000 - (moment() - moment().set("hours"
 console.log(`Job will be run in ${pause} milliseconds`)
 setTimeout(runJob, pause + 1000*60*5) // start at x*defaultTimeHours + 5min
 
-async function sendMessages(){
+async function sendMessages() {
     const msgs = await dbqueries.all('SELECT user_id, message FROM messages');
     const users = await dbqueries.all('SELECT user_id FROM queries');
-    const userSet = new Set(users.map(x=>x.user_id))
-    msgs.forEach(m =>{
-        userSet.forEach(async u => {
+    const userSet = new Set(users.map(x => x.user_id))
+    await Promise.all(msgs.map(async m => {
+        await Promise.all([...userSet].map(async u => {
             await bot.sendMessage(u, m.message)
-        })
-    })
+        }))
+    }))
+    await dbqueries.run("DELETE from messages")
 }
 
 async function processQueries(userId, lastHours) {
@@ -160,13 +161,21 @@ async function processQueries(userId, lastHours) {
                 const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
                 await bot.sendMessage(u, `Results according your filter(${filterName}) for the last ${lastHours} hours:`)
                 if (rows.length > 10) {
-                    let text = rows.map(r => r.url).join(" /n")
-                    if (text.length > 4096) {
-                        text = "too much results, probably your filter too wide"
+                    let text = ""
+                    for (const r of rows){
+                        const link = `<a href='${r.url}'>${r.text} (${r.price})</a>`
+                        if ((`${text} \n ${link}`).length > 4096) {
+                            await bot.sendMessage(u, text, { parse_mode: "HTML" })
+                            text = link
+                        }else{
+                            text = `${text} \n ${link}`
+                        }
                     }
-                    await bot.sendMessage(u, text)
+                    if(text){
+                        await bot.sendMessage(u, text, { parse_mode: "HTML" })
+                    }
                 } else {
-                    await Promise.all(rows.map(async r => await bot.sendMessage(u, r.url)))
+                    await Promise.all(rows.map(async r => await bot.sendMessage(u, `<a href='${r.url}'>${r.text} (${r.price})</a>`, { parse_mode: "HTML" })))
                 }
             }
         }));
@@ -181,7 +190,7 @@ function printFilter(name, value) {
 
 function getQuery(type) {
     return `
-SELECT e.url
+SELECT e.url, e.text, e.price
 FROM   "${(type == "buy" ? "estates_agg" : "estates_rent_agg")}" e
        JOIN (SELECT Min(createdon) createdOn,
                     id
