@@ -12,7 +12,17 @@ export class Start{
                 ]
             })
         };
-        this.bot.sendMessage(msg.chat.id, 'Welcome! Please, choose the action and parameters of the appartament of your dream and press "subscribe"', opts);
+        const invite = `
+        Welcome! Please, choose the action and parameters of the appartament of your dream and press "subscribe"
+The filter input should consist of simple numbers(do not add a currency or dimension).
+Example: 
+    Enter Max Price
+    6000000
+    Enter Min Size
+    45
+means that you want to get apparts bigger then 45 square meters with price less than 6000000 CZK`
+        this.bot.sendMessage(msg.chat.id, invite, opts);
+
         return;
     }
 }
@@ -117,14 +127,7 @@ async function setup(bot,sessions, msg, text) {
             ]
         })
     };
-    const defMsg = `Set filter or press subscribe. 
-The filter input should consist of simple numbers(do not add a currency or dimension).
-Example: 
-    Enter Max Price
-    6000000
-    Enter Min Size
-    45
-means that you want to get apparts bigger then 45 square meters with price less than 6000000 CZK`
+    const defMsg = `Set filter or press subscribe.`
 
     bot.sendMessage(msg.chat.id, text ?? defMsg, opts);
 }
