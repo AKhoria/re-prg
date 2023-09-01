@@ -75,7 +75,9 @@ export class Session {
                     case "Max Size":
                         max_size = x.value.replace(/\s/g, '')
                         break;
-
+                    case "Disposition":
+                        disposition = x.value.replace(/\s/g, '').toLowerCase()
+                        break;
                     default:
                         break;
                 }
@@ -87,39 +89,22 @@ export class Session {
             [userId, max_price, min_price, max_size, min_size, disposition, filter.type]);
     }
 
-    // extractQuery(filter) {
-    //     let max_price = null
-    //     let min_price = null
-    //     let max_size = null
-    //     let min_size = null
-    //     let disposition = null
-    //     const keys = Object.keys(sessions[userId].fields)
-    //     keys.map(x => { return { "name": x, "value": sessions[userId].fields[x] } })
-    //         .filter(x => x.value)?.forEach(x => {
-    //             switch (x.name) {
-    //                 case "Min Price":
-    //                     min_price = x.value.replace(/\s/g, '')
-    //                     break;
-    //                 case "Max Price":
-    //                     max_price = x.value.replace(/\s/g, '')
-    //                     break;
-    //                 case "Min Size":
-    //                     min_size = x.value.replace(/\s/g, '')
-    //                     break;
-    //                 case "Max Size":
-    //                     max_size = x.value.replace(/\s/g, '')
-    //                     break;
-    //                 case "Disposition":
-    //                     disposition = x.value
-    //                         .split(" ")
-    //                         .filter(x => /^\d+\+\d|kk$/.test(x))
-    //                         .join(",")
-    //                 default:
-    //                     break;
-    //             }
-    //         })
-    //     return [max_price, min_price, max_size, min_size, disposition]
-    // }
+    dispositionList = new Set(["1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1"])
+    validateField(fieldName, value) {
+        switch (fieldName) {
+            case 'Disposition':
+                if (!this.dispositionList.has(value)) {
+                    return `I don't know such a disposition, example of formats: 1+kk, 1+1`
+                }
+                break;
+            default:
+                if (isNaN(value)) {
+                    return "Value should be a simple number"
+                }
+                break;
+        }
+        return ""
+    }
 
     createFilter(type) {
         return {
@@ -128,8 +113,8 @@ export class Session {
                 ['Max Size', null],
                 ['Min Price', null],
                 ['Max Price', null],
+                ['Disposition', null],
             ]),
-            //'Disposition':null,
             'currentField': null,
             'type': type,
             'updatedAt': new Date

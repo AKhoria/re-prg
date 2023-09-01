@@ -134,12 +134,12 @@ async function processQueries(userId, lastHours) {
     if (!lastHours) {
         lastHours = defaultTimeHours
     }
-    const queries = await dbqueries.all('SELECT user_id, max_price, min_price, max_size, min_size, type FROM queries WHERE (user_id=?1 OR ?1 IS NULL) AND is_ready=1 ', [userId]);
+    const queries = await dbqueries.all('SELECT user_id, max_price, min_price, max_size, min_size, disposition, type FROM queries WHERE (user_id=?1 OR ?1 IS NULL) AND is_ready=1 ', [userId]);
 
     const q = {};
     queries.forEach((query) => {
-        const { user_id, max_price, min_price, max_size, min_size, type } = query;
-        const key = [min_size, max_size, min_price, max_price, type];
+        const { user_id, max_price, min_price, max_size, min_size, disposition, type } = query;
+        const key = [min_size, max_size, min_price, max_price, disposition, type];
         if (!q[key]) {
             q[key] = [user_id];
         } else {
@@ -149,8 +149,8 @@ async function processQueries(userId, lastHours) {
 
     const tasks = Object.keys(q).map(async k => {
         const users = q[k];
-        const [min_size, max_size, min_price, max_price, type] = k.split(",").map(x => x === '' ? null : x)
-        const params = [`-${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, null]
+        const [min_size, max_size, min_price, max_price, disposition, type] = k.split(",").map(x => x === '' ? null : x)
+        const params = [`-${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, disposition]
         const sql = getQuery(type)
         console.log([sql, users, params])
         const rows = await db.all(sql, params);
@@ -159,7 +159,7 @@ async function processQueries(userId, lastHours) {
         await Promise.all(users.map(async u => {
             if (rows.length != 0) {
                 try {
-                    const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}`
+                    const filterName = `${printFilter("min_size", min_size)}, ${printFilter("max_size", max_size)}, ${printFilter("min_price", min_price)}, ${printFilter("max_price", max_price)}, ${printFilter("disposition", disposition)}`
                     await bot.sendMessage(u, `Results according your filter(${filterName}) for the last ${lastHours} hours:`)
                     if (rows.length > 10) {
                         let text = ""

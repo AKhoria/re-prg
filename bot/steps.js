@@ -1,5 +1,5 @@
-export class Start{
-    constructor(bot,sessions) {
+export class Start {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -14,20 +14,22 @@ export class Start{
         };
         const invite = `
         Welcome! Please, choose the action and parameters of the appartament of your dream and press "subscribe"
-The filter input should consist of simple numbers(do not add a currency or dimension).
+The filter input should consist of simple numbers(do not add a currency or dimension) except disposition.
 Example: 
     Enter Max Price
     6000000
     Enter Min Size
     45
+    Enter Disposition
+    2+1
 means that you want to get apparts bigger then 45 square meters with price less than 6000000 CZK`
         this.bot.sendMessage(msg.chat.id, invite, opts);
 
         return;
     }
 }
-export class Rent{
-    constructor(bot,sessions) {
+export class Rent {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -37,8 +39,8 @@ export class Rent{
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Buy{
-    constructor(bot,sessions) {
+export class Buy {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -48,8 +50,8 @@ export class Buy{
         return await setup(this.bot, this.sessions, msg)
     }
 }
-export class Subscribe{
-    constructor(bot,sessions,processQueriesFunc) {
+export class Subscribe {
+    constructor(bot, sessions, processQueriesFunc) {
         this.bot = bot
         this.sessions = sessions
         this.processQueries = processQueriesFunc
@@ -59,33 +61,33 @@ export class Subscribe{
         await this.sessions.createQuery(msg.chat.id);
         await this.bot.sendMessage(msg.chat.id, `Subscribed! Will be sending updates every 3 hours`);
         await this.processQueries(msg.chat.id, "24")
-        await clear(this.bot,msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
+        await clear(this.bot, msg, "You can /unsubscribe or create a new subscribtion replacing the current one")
     }
 }
-export class Unsubscribe{
-    constructor(bot,sessions) {
+export class Unsubscribe {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
-    name = () =>"/unsubscribe"
+    name = () => "/unsubscribe"
     execute = async msg => {
         await this.sessions.removeFilter(msg.chat.id)
-        await clear(this.bot,msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
+        await clear(this.bot, msg, "Unsubscribed! You can start a new subscribtion by /buy or /rent")
     }
 }
-export class Cancel{
-    constructor(bot,sessions) {
+export class Cancel {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
     name = () => "cancel"
     execute = async msg => {
         await this.sessions.clear(msg.chat.id)
-        await clear(this.bot,msg, "Use /buy or /rent to start")
+        await clear(this.bot, msg, "Use /buy or /rent to start")
     }
 }
-export class SetFilter{
-    constructor(bot,sessions) {
+export class SetFilter {
+    constructor(bot, sessions) {
         this.bot = bot
         this.sessions = sessions
     }
@@ -97,10 +99,13 @@ export class SetFilter{
             filter.currentField == null &&
             filter.fields.has(messageText)) {
             filter.currentField = messageText
-            await  this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
-        } else if (
-            filter != null &&
-            filter.currentField != null) {
+            await this.bot.sendMessage(msg.chat.id, `Enter ${messageText}`);
+        } else if (filter != null && filter.currentField != null) {
+            const invalidMsg = this.sessions.validateField(filter.currentField, messageText)
+            if (invalidMsg != "") {
+                await this.bot.sendMessage(msg.chat.id, `Not expected value: ${invalidMsg}`);
+                return
+            }
             filter.fields.set(filter.currentField, messageText)
             filter.currentField = null
             await setup(this.bot, this.sessions, msg)
@@ -110,7 +115,7 @@ export class SetFilter{
     }
 }
 
-async function setup(bot,sessions, msg, text) {
+async function setup(bot, sessions, msg, text) {
     const filter = await sessions.getFilter(msg.chat.id)
     if (!filter) {
         await bot.sendMessage(msg.chat.id, "something went wrong, please start again")
@@ -123,7 +128,7 @@ async function setup(bot,sessions, msg, text) {
         reply_markup: JSON.stringify({
             keyboard: [
                 ...params.map(x => [x]),
-                ['subscribe','cancel']
+                ['subscribe', 'cancel']
             ]
         })
     };
