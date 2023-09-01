@@ -93,13 +93,13 @@ export class Session {
     validateField(fieldName, value) {
         switch (fieldName) {
             case 'Disposition':
+                var result = ""
                 value.split(",").forEach(val =>{
                     if (!this.dispositionList.has(val)) {
-                        return `I don't know such a disposition(${val}), example of the right format: 1+kk,1+1`
+                        result = `I don't know such a disposition(${val}), example of the right format: 1+kk,1+1`
                     }
                 })
-                
-                break;
+                return result
             default:
                 if (isNaN(value)) {
                     return "Value should be a simple number"
