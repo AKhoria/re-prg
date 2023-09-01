@@ -139,7 +139,7 @@ async function processQueries(userId, lastHours) {
     const q = {};
     queries.forEach((query) => {
         const { user_id, max_price, min_price, max_size, min_size, disposition, type } = query;
-        const key = [min_size, max_size, min_price, max_price, disposition, type];
+        const key = [min_size, max_size, min_price, max_price, disposition, type].join("|");
         if (!q[key]) {
             q[key] = [user_id];
         } else {
@@ -147,11 +147,11 @@ async function processQueries(userId, lastHours) {
         }
     });
 
-    const tasks = Object.keys(q).map(async k => {
-        const users = q[k];
-        const [min_size, max_size, min_price, max_price, disposition, type] = k.split(",").map(x => x === '' ? null : x)
-        const params = [`-${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, disposition]
-        const sql = getQuery(type)
+    const tasks = Object.keys(q).map(async strKey => {
+        const users = q[strKey];
+        const [min_size, max_size, min_price, max_price, disposition, type] = strKey.split("|").map(x => x === '' ? null : x)
+        const params = [`-${lastHours} hour`, min_size ?? 0, max_size ?? 999, min_price ?? 0, max_price ?? 999999999, ...(disposition?.split(",") ?? [])]
+        const sql = getQuery(type, disposition?.split(",").length ?? 0)
         console.log([sql, users, params])
         const rows = await db.all(sql, params);
         console.log(`found ${rows.length} rows`)
@@ -192,7 +192,15 @@ function printFilter(name, value) {
     return `${name}: ${value ?? 'Not Set'}`;
 }
 
-function getQuery(type) {
+function getQuery(type, dispLen) {
+    let params = []
+    for (let i = 6; i < (dispLen + 6); i++) {
+        params.push(i)
+    }
+    let dispFilter = 
+        params.length == 0 ? 
+        "1==1" : 
+        `e.disposition in (${params.map((value) => `$${value + 1}`).join(',')})`
     return `
 SELECT e.url, e.text, e.price
 FROM   "${(type == "buy" ? "estates_agg" : "estates_rent_agg")}" e
@@ -202,7 +210,7 @@ FROM   "${(type == "buy" ? "estates_agg" : "estates_rent_agg")}" e
              GROUP  BY id)q
          ON q.id = e.id
 WHERE  strftime('%Y-%m-%d %H:%M:%S',q.createdon) > (SELECT Datetime('now', ?1))
-AND e.size>=?2 AND e.size<=?3 AND e.price>=?4 AND  e.price<=?5 AND (?6 IS NULL OR e.disposition=?6)
+AND e.size>=?2 AND e.size<=?3 AND e.price>=?4 AND  e.price<=?5 AND (${dispFilter})
 ORDER  BY e.createdon desc
 `
 }

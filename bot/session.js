@@ -93,9 +93,12 @@ export class Session {
     validateField(fieldName, value) {
         switch (fieldName) {
             case 'Disposition':
-                if (!this.dispositionList.has(value)) {
-                    return `I don't know such a disposition, example of formats: 1+kk, 1+1`
-                }
+                value.split(",").forEach(val =>{
+                    if (!this.dispositionList.has(val)) {
+                        return `I don't know such a disposition(${val}), example of the right format: 1+kk,1+1`
+                    }
+                })
+                
                 break;
             default:
                 if (isNaN(value)) {

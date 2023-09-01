@@ -21,7 +21,7 @@ Example:
     Enter Min Size
     45
     Enter Disposition
-    2+1
+    2+1,2+kk
 means that you want to get apparts bigger then 45 square meters with price less than 6000000 CZK`
         this.bot.sendMessage(msg.chat.id, invite, opts);
 
